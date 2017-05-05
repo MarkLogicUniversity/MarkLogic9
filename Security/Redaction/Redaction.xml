@@ -1,0 +1,348 @@
+<export><workspace name="Redaction"><query name="Setup Roles" focus="true" listorder="1" taborder="1" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">/*
+  Create all the roles used in this example.
+  Note:  If in the past you have completed Episode 2 of the Security On Demand Series then you can skip this step.
+*/
+
+'use strict';
+
+const roles = ['project-default', 'project-admin', 'secret-read', 'top-secret-read'];
+               
+const insertRole = (role) =&gt; {
+  const data = { 'role-name': role };
+  const options = {
+    authentication: {
+      method: 'digest',
+      username: 'admin',
+      password: 'admin'
+    },
+    data: xdmp.quote(data),
+    headers : {
+      'content-type' : 'application/json'
+    }
+  };
+  xdmp.httpPost('http://localhost:8002/manage/v2/roles', options);
+  return `${role} inserted`;
+}
+
+roles.map(role =&gt; insertRole(role));</query><query name="Setup Users" focus="false" listorder="2" taborder="2" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">/*
+  Create all the users used in this example and assign them to appropriate roles.
+  Note:  If in the past you have completed Episode 2 of the Security On Demand Series then you can skip this step.
+*/
+
+'use strict';
+
+const users = [
+  {'user-name': 'project-default-user', 'password': 'pass', 'role': ['project-default']},
+  {'user-name': 'm', 'password': 'pass', 'role': ['project-admin', 'top-secret-read', 'secret-read']},
+  {'user-name': 'bond', 'password': 'pass', 'role': ['secret-read']}
+];
+
+const insertUser = (user) =&gt; {
+  const options = {
+    authentication: {
+      method: 'digest',
+      username: 'admin',
+      password: 'admin'
+    },
+    data: xdmp.quote(user),
+    headers : {
+      'content-type' : 'application/json'
+    }
+  };
+  xdmp.httpPost('http://localhost:8002/manage/v2/users', options);
+  return `${user['user-name']} inserted`;
+}
+
+users.map(user =&gt; insertUser(user));
+</query><query name="Load Memo Doc" focus="false" listorder="3" taborder="3" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">//  insert example memo doc in the Documents database.
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()) === 'Documents') {
+  
+  xdmp.documentInsert(
+    '/secret/99999.json',
+    {
+      'clearance': 'secret',
+      'author': 'M',
+      'subject': 'SPECTRE',     
+      'body': 'SPECTRE is planning to meet soon in Barcelona.  I need you to go immediately and capture the suspects.',
+      'source':
+        {
+          'description': 'undercover MI6 agent',
+          'name': 'Raoul Silva',
+          'location': 'Shanghai',
+          'date': '2017-05-01'
+        }
+    },
+    [xdmp.permission('secret-read', 'read'), xdmp.permission('project-admin', 'update')],
+    ['memos']
+  );
+} else {
+  'Please select the Documents database from the Content Source menu and run this script again.'; 
+}</query><query name="Create Name Redaction Rule" focus="false" listorder="4" taborder="4" active="true" database="9149377615612928155" server="8040375145194433292" database-name="Schemas" server-name="App-Services" mode="javascript">/*
+  Create a redaction rule for the source/name property.
+  Load the redaction rule into the Schemas database.
+*/
+
+'use strict';
+declareUpdate();
+
+const nameRule = 
+{
+    rule: {
+        description: 'redact source/name property',
+        path: '/source/name',
+        namespaces: [],
+        method: {
+            function: 'mask-random'
+        },
+        options: {
+          length: 10
+        }
+    }
+};
+
+if (xdmp.databaseName(xdmp.database()) === 'Schemas') {
+  
+  xdmp.documentInsert(
+    '/redaction/rule/name.json',
+    nameRule,
+    [xdmp.permission('secret-read', 'read'), xdmp.permission('project-admin', 'read'), xdmp.permission('project-admin', 'update')],
+    'memo-redaction-rules'
+  );
+} else {
+  'Please select the Schemas database from the Content Source menu and run this script again.'; 
+}</query><query name="Redact Document - Admin" focus="false" listorder="5" taborder="5" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">/* 
+  Apply redaction rules in a specific collection to redact a document.
+  Remember we are logged into Query Console as an admin, therefore this test isn't fully realistic.
+*/
+
+'use strict';
+
+const rdt = require('/MarkLogic/redaction');
+const rulesCollections = ['memo-redaction-rules'];
+
+rdt.redact(fn.doc('/secret/99999.json'), rulesCollections);
+</query><query name="Redact Document - Search" focus="false" listorder="8" taborder="8" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">/*
+  NOTE:  To ensure no information leaks, use element-level security to enforce your desired security model.
+  Redaction of documents returned from search simply masks the data
+*/
+'use strict';
+
+const query = 
+  `const rdt = require('/MarkLogic/redaction');
+   const rulesCollections = ['memo-redaction-rules'];
+   rdt.redact(cts.search(cts.wordQuery('silva')), rulesCollections);`;
+   
+xdmp.eval(
+  query,
+  null,
+  { userId: xdmp.user('bond')}
+);
+</query><query name="Load Agent Doc" focus="false" listorder="9" taborder="9" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">//  insert example agent doc in the Documents database.
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()) === 'Documents') {
+  
+  xdmp.documentInsert(
+    '/top-secret/88888.json',
+    {
+      agent: 
+      {
+        fname: 'Felix',
+        lname: 'Leiter',
+        agency: 'CIA',
+        relationship: 'friend of James Bond',
+        email: 'felix@cia.gov',
+        ssn: '123-45-6789'
+      }
+    },
+    [xdmp.permission('secret-read', 'read'), xdmp.permission('project-admin', 'update')],
+    ['agents']
+  );
+} else {
+  'Please select the Documents database from the Content Source menu and run this script again.'; 
+}
+</query><query name="Create Agent Redaction Rules" focus="false" listorder="11" taborder="11" active="true" database="9149377615612928155" server="8040375145194433292" database-name="Schemas" server-name="App-Services" mode="javascript">/*
+  Create redaction rules for the:
+    -agent/fname property that will select first names from a dictionary
+    -agent/lname property that will select last names from a dictionary
+    -agent/email property using the redact-email function
+    -agent/ssn property using the redact-us-ssn function
+  Load the redaction rules into the Schemas database.
+*/
+
+'use strict';
+declareUpdate();
+
+const rules = [
+  {
+    uri: '/redaction/rule/agent-fname.json',
+    ruleSpec: {
+      description: 'redact agent/fname property using dictionary',
+      path: '/agent/fname',
+      namespaces: [],
+      method: {
+          'function': 'mask-random'
+      },
+      options: {
+        dictionary: '/redaction/dictionaries/fnames.json'
+      }
+    }
+  },
+  {
+    uri: '/redaction/rule/agent-lname.json',
+    ruleSpec: {
+      description: 'redact agent/lname property using dictionary',
+      path: '/agent/lname',
+      namespaces: [],
+      method: {
+          'function': 'mask-random'
+      },
+      options: {
+        dictionary: '/redaction/dictionaries/lnames.json'
+      }
+    }
+  },
+  {
+    uri: '/redaction/rule/agent-email.json',
+    ruleSpec: {
+      description: 'redact agent/email property',
+      path: '/agent/email',
+      namespaces: [],
+      method: {
+          'function': 'redact-email'
+      },
+      options: {
+      }
+    }
+  },
+  {
+    uri: '/redaction/rule/agent-ssn.json',
+    ruleSpec: {
+      description: 'redact agent/ssn property',
+      path: '/agent/ssn',
+      namespaces: [],
+      method: {
+          'function': 'redact-us-ssn'
+      },
+      options: {
+      }
+    }
+  }
+];
+
+const insertRules = (rule) =&gt; {
+  xdmp.documentInsert(
+    rule.uri,
+    {rule: rule.ruleSpec},
+    [xdmp.permission('secret-read', 'read'), xdmp.permission('project-admin', 'update')],
+    'agent-redaction-rules'
+  );
+  return `${rule.uri} inserted`;
+};
+
+if (xdmp.databaseName(xdmp.database()) === 'Schemas') {
+  rules.map(rule =&gt; insertRules(rule));
+} else {
+  'Please select the Schemas database from the Content Source menu and run this script again.';
+}
+</query><query name="Create Dictionaries" focus="false" listorder="10" taborder="10" active="true" database="9149377615612928155" server="8040375145194433292" database-name="Schemas" server-name="App-Services" mode="javascript">/*
+  Create dictionaries to redact agent first and last names with realistic but fictitious information
+*/
+
+'use strict';
+declareUpdate();
+
+const dictionaries = [
+  {
+    uri: 'fnames',
+    data: {
+      dictionary: {
+        entry: ['Joe', 'Jane', 'John', 'Julie']
+      }
+    }
+  },
+  {
+    uri: 'lnames',
+    data: {
+      dictionary: {
+        entry: ['Smith', 'Jones', 'Rodriguez', 'Johnson']
+      }
+    }
+  }
+];
+
+const insertDictionary = (dictionary) =&gt; {
+  xdmp.documentInsert(
+    `/redaction/dictionaries/${dictionary.uri}.json`,
+    dictionary.data,
+    [xdmp.permission('secret-read', 'read'), xdmp.permission('project-admin', 'update')],
+    'dictionaries'
+  );
+  return `Dictionary inserted (${dictionary.uri})`;
+};
+
+if (xdmp.databaseName(xdmp.database()) === 'Schemas') {
+  dictionaries.map(dictionary =&gt; insertDictionary(dictionary));
+} else {
+  'Please select the Schemas database from the Content Source menu and run this script again.';
+}
+</query><query name="Test Redaction" focus="false" listorder="12" taborder="12" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">// apply redaction rules in a specific collection to redact a document
+
+'use strict';
+
+const query = 
+  `const rdt = require('/MarkLogic/redaction');
+   const rulesCollections = ['agent-redaction-rules'];
+   rdt.redact(fn.doc("/top-secret/88888.json"), rulesCollections);`;
+   
+xdmp.eval(
+  query,
+  null,
+  { userId: xdmp.user('bond')}
+);</query><query name="Redact on Export" focus="false" listorder="13" taborder="13" active="true" database="13197433669741968747" server="5366097834780395774" database-name="" server-name="" mode="javascript">// Use mlcp to export (or copy) data from a database and apply redaction rules
+
+</query><query name="Redact Document - Bond" focus="false" listorder="6" taborder="6" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">/* 
+  Apply redaction rules in a specific collection to redact a document.
+  Use xdmp.eval to simulate running this as Bond, which is more realistic.
+*/
+
+'use strict';
+
+const query = 
+  `const rdt = require('/MarkLogic/redaction');
+   const rulesCollections = ['memo-redaction-rules'];
+   rdt.redact(fn.doc('/secret/99999.json'), rulesCollections);`;
+   
+xdmp.eval(
+  query,
+  null,
+  { userId: xdmp.user('bond')}
+);
+</query><query name="Update Roles" focus="false" listorder="7" taborder="7" active="true" database="11867687800436821385" server="8040375145194433292" database-name="Documents" server-name="App-Services" mode="javascript">// give bond the redaction-user role
+
+'use strict';
+
+const user = 'bond';
+
+const config = 
+    {
+      role: ['secret-read','redaction-user']
+    };
+const options = {
+  authentication: {
+    method: 'digest',
+    username: 'admin',
+    password: 'admin'
+  },
+  data: xdmp.quote(config), //xdmp.quote() formats the config object as a string so the REST endpoint understands it
+  headers : {
+    'content-type' : 'application/json'
+  }
+};
+xdmp.httpPut(`http://localhost:8002/manage/v2/users/${user}/properties`, options);</query></workspace></export>

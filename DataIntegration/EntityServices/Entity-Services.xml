@@ -1,0 +1,176 @@
+<export><workspace name="Entity-Services"><query name="Load Data" focus="false" listorder="1" taborder="1" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+declareUpdate();
+
+// Set to the path where you downloaded the Entity Services
+//  example data from GitHub.
+const pathToEntityServices = "put path to EntityServices folder here";
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "documents") {
+  'Please set Database: to "Documents" before running this code.';
+} else {
+  const pathToRaces = `${pathToEntityServices}/EntityServices/data/race-data/races/`;
+  const pathToRuns = `${pathToEntityServices}/EntityServices/data/race-data/runs/`;
+  const pathToRunners = `${pathToEntityServices}/EntityServices/data/race-data/runners/`;
+  const pathToModels = `${pathToEntityServices}/EntityServices/data/models/`;
+
+  const raceDocs = xdmp.filesystemDirectory(pathToRaces);
+  const runDocs = xdmp.filesystemDirectory(pathToRuns);
+  const runnerDocs = xdmp.filesystemDirectory(pathToRunners);
+  const modelDocs = xdmp.filesystemDirectory(pathToModels);
+
+  raceDocs.map(doc =&gt; xdmp.documentLoad(doc.pathname, {uri: `/race/${doc.filename}`, collections : ['raw','race']}));
+  runDocs.map(doc =&gt; xdmp.documentLoad(doc.pathname, {uri: `/run/${doc.filename}`, collections : ['raw','run']}));
+  runnerDocs.map(doc =&gt; xdmp.documentLoad(doc.pathname, {uri: `/runner/${doc.filename}`, collections : ['raw','runner']}));
+  modelDocs.map(doc =&gt; xdmp.documentLoad(doc.pathname, {uri: `/model/${doc.filename}`, collections : ['raw','models']}));
+
+  'Content is loaded.';
+}
+</query><query name="Verify Data Load" focus="false" listorder="2" taborder="2" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+
+// Verify the results of the raw data load.
+//  Note: the expected numbers are only valid
+//  immediately after the raw data load. Other
+//  documents will be added afterwards that will
+//  affect the totals.
+
+const results = [];
+
+results.push(`number of races (should equal 4) = ${fn.count(xdmp.directory('/race/'))}`);
+
+results.push('number of races (should equal 4) = ' + fn.count(xdmp.directory('/race/')));
+results.push('number of runs (should equal 1100) = ' + fn.count(xdmp.directory('/run/')));
+results.push('number of runners (should equal 50)  = ' + fn.count(xdmp.directory('/runner/')));
+results.push('number of models (should equal 2) = ' + fn.count(xdmp.directory('/model/')));
+results;</query><query name="Validate Model" focus="false" listorder="3" taborder="3" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+const es = require('/MarkLogic/entity-services/entity-services');
+
+const model = fn.doc('/model/simple-race.json');
+
+// It is a best practice to always begin
+//  with a validated model. 
+es.modelValidate(model);
+</query><query name="Generate Test Instances" focus="false" listorder="4" taborder="4" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+const es = require('/MarkLogic/entity-services/entity-services');
+
+const model = fn.doc('/model/simple-race.json');
+
+// Generate what the Race, Run and Runner entities will
+//  look like after processing with Entity Services. 
+// Displays the structure using sample data but of
+//  data types matching the given model.
+const testInstances = es.modelGetTestInstances(model);
+
+// Display the test entities;
+testInstances;</query><query name="Code Generate - JS" focus="false" listorder="5" taborder="5" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+declareUpdate();
+
+const es = require('/MarkLogic/entity-services/entity-services');
+
+// Generate code artificats that we will initially want
+//  to begin processing our raw data to desired entities.
+
+const model = fn.doc('/model/simple-race.json');
+
+// Generate code that includes functions to create entities
+//  from raw data documents and envelope them.
+const instanceConverter = es.instanceConverterGenerate(model);
+xdmp.save('./Modules/Race-0.0.1.xqy', instanceConverter);
+
+// Generate Template Driven Extraction template
+const tdeTemplate = es.extractionTemplateGenerate(model);
+xdmp.save('./Modules/Race-0.0.1.tdex', tdeTemplate);
+
+// Create database configurations for indexes and lexicons
+const dbConfig = es.databasePropertiesGenerate(model);
+xdmp.save('./Modules/Race-0.0.1-db.config', dbConfig);
+
+// Create suitable Search API options to add to the
+//  Modules database for your Content database to use
+//  with MarkLogic server-side and client APIs.
+const searchOptions = es.searchOptionsGenerate(model);
+xdmp.save('./Modules/Race-0.0.1-search.xqy', searchOptions);
+
+// Create an XSD schema document to add to the
+//  Schema database for your Content database.
+const entitySchema = es.schemaGenerate(model);
+xdmp.save('./Modules/Race-0.0.1.xsd', entitySchema);
+
+'Code generation finished. Check the MarkLogic installation directory under /Modules.';</query><query name="Raw to Instance" focus="true" listorder="6" taborder="6" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+declareUpdate();
+const es = require('/MarkLogic/entity-services/entity-services');
+
+// load the generated "Raw to Instance" functions
+//  from es.instanceConverterGenerate()
+const race = require('/Race-0.0.1.xqy');
+
+var rawDoc = null;
+var transformedDoc = null;
+var envelopedDoc = null;
+
+// read raw Race documents from the database and call the
+//  correct conversion function
+
+for (rawDoc of cts.search(cts.andQuery([cts.collectionQuery('race'), cts.collectionQuery('raw')]))) {
+  const uri = xdmp.nodeUri(rawDoc);
+  transformedDoc = race.extractInstanceRace(rawDoc);
+  envelopedDoc = race.instanceToEnvelope(transformedDoc);
+  xdmp.documentInsert(`${uri}_instance`, envelopedDoc, xdmp.defaultPermissions(), ['entity','race','v0.0.1']);
+};
+
+// read raw Run documents from the database and call the
+//  correct conversion function
+for (rawDoc of cts.search(cts.andQuery([cts.collectionQuery('run'), cts.collectionQuery('raw')]))) {
+  const uri = xdmp.nodeUri(rawDoc);
+  transformedDoc = race.extractInstanceRun(rawDoc);
+  envelopedDoc = race.instanceToEnvelope(transformedDoc);
+  xdmp.documentInsert(`${uri}_instance`, envelopedDoc, xdmp.defaultPermissions(), ['entity','run','v0.0.1']);
+};
+
+// read raw Runner documents from the datbaase and call the
+//  correct conversion function
+for (rawDoc of cts.search(cts.andQuery([cts.collectionQuery('runner'), cts.collectionQuery('raw')]))) {
+  const uri = xdmp.nodeUri(rawDoc);
+  transformedDoc = race.extractInstanceRunner(rawDoc);
+  envelopedDoc = race.instanceToEnvelope(transformedDoc);
+  xdmp.documentInsert(`${uri}_instance`, envelopedDoc, xdmp.defaultPermissions(), ['entity','runner','v0.0.1']);
+};
+
+'New Entities created and saved to the content database.';
+</query><query name="Generate Version Translator" focus="false" listorder="8" taborder="8" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+declareUpdate();
+
+const es = require('/MarkLogic/entity-services/entity-services');
+const sem = require('/MarkLogic/semantics');
+
+const origModel = fn.doc('/model/simple-race.json');
+const newModel = fn.doc('/model/simple-race-0.0.2.json');
+
+const versionTranslator = es.versionTranslatorGenerate(origModel, newModel);
+xdmp.save('./Modules/Race-v1-to-v2.xqy', versionTranslator);
+
+'Version translator created.';
+</query><query name="Examine Entities" focus="false" listorder="7" taborder="7" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+
+// Display a Race, Run and Runner entity created
+//  by the generated code.
+
+fn.doc(['/race/10k2.json_instance','/run/10k1-21.json_instance','/runner/xay.json_instance']);</query><query name="Convert Versions" focus="false" listorder="9" taborder="9" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+declareUpdate();
+const es = require('/MarkLogic/entity-services/entity-services');
+
+// load the generated "Race Version Translator" functions
+//  from es.versionTranslatorGenerate()
+const race2 = require('/Race-v1-to-v2');
+
+const results = [];
+// examine a new Race entity
+results.push(race2.convertInstanceRace(fn.doc('/race/10k2.json_instance')));
+
+//examine a new Run entity
+results.push(race2.convertInstanceRun(fn.doc('/run/10k1-21.json_instance')));
+
+//examine a Runner entity
+results.push(race2.convertInstanceRunner(fn.doc('/runner/xay.json_instance')));
+
+//display the converted entities
+results;</query></workspace></export>

@@ -1,0 +1,163 @@
+<export><workspace name="OtherNewFeatures"><query name="1- Insert documents with geo data" focus="false" listorder="2" taborder="2" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="xquery">xdmp:document-insert(
+  "geo-south-east-asia-region.xml",
+  &lt;doc&gt;
+    &lt;region-type&gt;polygon&lt;/region-type&gt;
+    &lt;src&gt;Waters of South East Asia&lt;/src&gt;
+    &lt;creation-date&gt;{ xs:date("2017-04-02") }&lt;/creation-date&gt;
+    &lt;location&gt;
+    {cts:polygon((
+    cts:point(20.632784, 88.066406),
+    cts:point(-11.867351, 102.480469),
+    cts:point(-6.664608, 139.746094),
+    cts:point(21.289374, 124.980469)    
+    ))}
+    &lt;/location&gt;
+  &lt;/doc&gt;
+  );
+ 
+xdmp:document-insert(
+  "geo-box-1.xml",
+  &lt;doc&gt;
+    &lt;region-type&gt;box&lt;/region-type&gt;
+    &lt;src&gt;Koh Lanta&lt;/src&gt;
+    &lt;creation-date&gt;{ xs:date("2017-04-02") }&lt;/creation-date&gt;
+    &lt;location&gt;
+    {fn:string(cts:box(
+    7.4672929, 
+    99.0163766, 
+    7.8567634, 
+    99.1521668
+    ))}
+    &lt;/location&gt;
+  &lt;/doc&gt;
+  );
+ 
+ xdmp:document-insert(
+  "geo-box-2.xml",
+  &lt;doc&gt;
+    &lt;region-type&gt;box&lt;/region-type&gt;
+    &lt;src&gt;Koh Phi Phi&lt;/src&gt;
+    &lt;creation-date&gt;{ xs:date("2017-04-02") }&lt;/creation-date&gt;
+    &lt;location&gt;
+    {fn:string(cts:box(
+    7.7175806, 
+    98.7558714, 
+    7.7877235, 
+    98.7923348
+    ))}
+    &lt;/location&gt;
+  &lt;/doc&gt;
+  );
+  
+(: check if docs have been ingested :)
+
+fn:doc( "geo-south-east-asia-region.xml" );
+fn:doc( "geo-box-1.xml" );
+fn:doc( "geo-box-2.xml" );
+</query><query name="2- Setting up geospatial indexes" focus="false" listorder="3" taborder="3" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="xquery">xquery version "1.0-ml";
+import module namespace admin = "http://marklogic.com/xdmp/admin" 
+  at "/MarkLogic/admin.xqy";
+
+let $config := admin:get-configuration()
+let $database-id := admin:database-get-id($config,"Documents")
+let $geospatial-region-path-indexes := admin:database-geospatial-region-path-index(
+  "/doc/location", 
+  "wgs84/double", 
+  6,
+  "reject")
+  
+let $geo-region-index-config := admin:database-add-geospatial-region-path-index(
+  $config, 
+  $database-id, 
+  $geospatial-region-path-indexes)
+
+return admin:save-configuration($geo-region-index-config)</query><query name="3- Region search query" focus="false" listorder="4" taborder="4" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="xquery">let $geospatial-region-reference := cts:geospatial-region-path-reference("/doc/location",
+      ("coordinate-system=wgs84", "precision=double"))
+
+let $region := cts:polygon((
+    cts:point(20.632784, 88.066406),
+    cts:point(-11.867351, 102.480469),
+    cts:point(-6.664608, 139.746094),
+    cts:point(21.289374, 124.980469)
+  ))
+
+let $geospatial-region-query := cts:geospatial-region-query(
+  $geospatial-region-reference,
+  "within",
+  $region
+)
+
+return cts:search(
+  fn:doc(),
+$geospatial-region-query)</query><query name="4- Double precision" focus="false" listorder="5" taborder="5" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="xquery">(: 
+In this forth tab, let's calculte the distance in feet betwwen the 2 best rated diving circuits in Thailand 
+:)
+
+"1. Using float precision: ",
+geo:distance(
+  cts:point(7.599906,99.03523500000006),
+  cts:point(7.650566, 99.03743499999996),
+  ("coordinate-system=wgs84","precision=float","units=feet"));
+
+"2. Using double precision: ",
+geo:distance(
+  cts:point(7.599906,99.03523500000006),
+  cts:point(7.650566, 99.03743499999996),
+  ("coordinate-system=wgs84","precision=double","units=feet"));
+  
+(: 
+1. result: 18398.5656287115
+2. result: 18398.7527797624 
+:)
+</query><query name="6- Extra" focus="false" listorder="6" taborder="7" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="xquery">(:
+
+If you wish to use the Google Map API to return your favorite dive site address coordinates
+
+:)
+
+let $location := xdmp:url-encode("koh lanta")
+let $request := fn:concat("http://maps.googleapis.com/maps/api/geocode/xml?address=", $location)
+let $response := xdmp:http-get($request)
+return $response[2]/GeocodeResponse/result[1]</query><query name="5- Environment Indicator" focus="true" listorder="6" taborder="6" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="xquery">declare namespace appservices="http://marklogic.com/appservices";
+let $cluster as xs:string := xdmp:cluster-name()
+let $config as element(appservices:environment-ui) := 
+  &lt;appservices:environment-ui&gt;
+    &lt;appservices:ui-active&gt;true&lt;/appservices:ui-active&gt;
+    &lt;appservices:ui-name&gt;macpro-3679.hq.marklogic.com-cluster&lt;/appservices:ui-name&gt;
+    &lt;appservices:ui-label&gt;? PRODUCTION ?&lt;/appservices:ui-label&gt;
+    &lt;appservices:ui-header-color&gt;#FF6666&lt;/appservices:ui-header-color&gt;
+    &lt;appservices:ui-header-text-color&gt;#000000&lt;/appservices:ui-header-text-color&gt;
+    &lt;appservices:ui-message&gt;(Message of the Day) \n\nPlease acknowledge you have read this by
+    closing this alert or clicking "OK".  
+    You may not continue to use this application until you have done so.
+    &lt;/appservices:ui-message&gt;
+  &lt;/appservices:environment-ui&gt;
+return 
+  xdmp:node-replace(
+    fn:doc('/cluster-ui-settings.xml')//appservices:environment-ui[./appservices:ui-name eq $cluster], 
+    $config
+  )
+;
+fn:doc('/cluster-ui-settings.xml') </query><query name="Readme" focus="false" listorder="1" taborder="1" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="xquery">(:
+***1- Insert documents with geo data
+In this tab, we insert 3 xml documents. Each of them describes one region of South East Asia. 
+While reviewing the document content, notice that the xpath to the region coordinates is /doc/location.
+
+***2- Setting up geospatial indexes
+In this tab, we setup a region index will  provide fast access to our geospatial data and store
+it as geo data using the wgs84 coordinate system with double precision
+
+***3- Tab Region search query
+
+The cts:geospatial-region-path-reference() constructor indicates which region index to use for our search
+The $region variable defines a large polygon representing the waters of SE Asia
+
+The cts:geospatial-region-query constructor specifies:
+- a region index as a reference to look up region data in our database index : $geospatial-region-reference
+- large polygon representing the waters of SE Asia as a main search region: $region
+- the operator "within" that sets the geographic relationship between the large polygon and
+  the documents describing regions we are looking for. 
+
+Simply put the search query "cts:search( fn:doc(),$geospatial-region-query)" , searching
+for documents that describe regions that are WITHIN the polygon representing the waters of SE Asia.
+:)</query></workspace></export>

@@ -1,0 +1,13 @@
+<export><workspace name="RollingUpgrade"><query name="Cluster Effective Version" focus="false" listorder="2" taborder="3" active="true" database="14449112333231871224" server="17838803978523220697" database-name="Documents" server-name="App-Services" mode="javascript">// query
+var admin = require("/MarkLogic/admin");
+var configuration = admin.getConfiguration();
+
+admin.clusterGetEffectiveVersion(configuration);</query><query name="can Commit" focus="false" listorder="3" taborder="4" active="true" database="15275568265886600514" server="16018542790539459432" database-name="top-songs" server-name="top-songs-xdbc" mode="javascript">// query
+var admin = require("/MarkLogic/admin");
+admin.canCommitUpgrade();
+</query><query name="commit Upgrade" focus="true" listorder="4" taborder="5" active="true" database="15275568265886600514" server="16018542790539459432" database-name="top-songs" server-name="top-songs-xdbc" mode="javascript">// query
+
+var admin = require("/MarkLogic/admin");
+var configuration = admin.getConfiguration();
+admin.commitUpgrade(configuration);
+</query></workspace></export>

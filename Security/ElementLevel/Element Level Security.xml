@@ -1,0 +1,210 @@
+<export><workspace name="Element Level Security"><query name="Setup Roles" focus="true" listorder="1" taborder="1" active="true" database="14253814390685068046" server="1995432663919597630" database-name="Documents" server-name="App-Services" mode="javascript">/*
+  Create all the roles used in this example.
+  Note:  If you have been following along with the Security series of tutorials you do not need to run this query.
+*/
+
+'use strict';
+
+const roles = ['project-default', 'project-admin', 'secret-read', 'top-secret-read'];
+               
+const insertRole = (role) =&gt; {
+  const data = { 'role-name': role };
+  const options = {
+    authentication: {
+      method: 'digest',
+      username: 'admin',
+      password: 'admin'
+    },
+    data: xdmp.quote(data),
+    headers : {
+      'content-type' : 'application/json'
+    }
+  };
+  xdmp.httpPost('http://localhost:8002/manage/v2/roles', options);
+  return `${role} inserted`;
+}
+
+roles.map(role =&gt; insertRole(role));</query><query name="Setup Users" focus="false" listorder="2" taborder="2" active="true" database="14253814390685068046" server="1995432663919597630" database-name="Documents" server-name="App-Services" mode="javascript">/*
+  Create all the users used in this example and assign them to appropriate roles.
+  Note:  If you have been following along with the Security series of tutorials you do not need to run this query.
+*/
+
+'use strict';
+
+const users = [
+  {'user-name': 'project-default-user', 'password': 'pass', 'role': ['project-default']},
+  {'user-name': 'm', 'password': 'pass', 'role': ['project-admin', 'top-secret-read', 'secret-read']},
+  {'user-name': 'bond', 'password': 'pass', 'role': ['secret-read']}
+];
+
+const insertUser = (user) =&gt; {
+  const options = {
+    authentication: {
+      method: 'digest',
+      username: 'admin',
+      password: 'admin'
+    },
+    data: xdmp.quote(user),
+    headers : {
+      'content-type' : 'application/json'
+    }
+  };
+  xdmp.httpPost('http://localhost:8002/manage/v2/users', options);
+  return `${user['user-name']} inserted`;
+}
+
+users.map(user =&gt; insertUser(user));
+</query><query name="Load Memo Doc" focus="false" listorder="3" taborder="3" active="true" database="14253814390685068046" server="1995432663919597630" database-name="Documents" server-name="App-Services" mode="javascript">//  insert memo doc used in these examples into the Documents database.
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()) === 'Documents') {
+  
+  xdmp.documentInsert(
+    '/secret/99999.json',
+    {
+      'clearance': 'secret',
+      'author': 'M',
+      'subject': 'SPECTRE',     
+      'body': 'SPECTRE is planning to meet soon in Barcelona.  I need you to go immediately and capture the suspects.',
+      'source':
+        {
+          'description': 'undercover MI6 agent',
+          'name': 'Raoul Silva',
+          'location': 'Shanghai',
+          'date': '2017-05-01'
+        }
+    },
+    [xdmp.permission('secret-read', 'read'), xdmp.permission('top-secret-read', 'read'), xdmp.permission('project-admin', 'update')],
+    ['memos']
+  );
+} else {
+  'Please select the Documents database from the Content Source menu and run this script again.'; 
+}</query><query name="Create Rolesets" focus="false" listorder="11" taborder="11" active="true" database="2077208975638282412" server="12523142205650827470" database-name="Security" server-name="Admin" mode="javascript">// have MarkLogic figure out what rolesets are needed and then create them for us
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()) === 'Security') {
+  
+  const query = 'xdmp.databaseNodeQueryRolesets(fn.doc("/secret/99999.json"), ["unconfigured"])';
+
+  const rolesetDefinitions = 
+    xdmp.eval(
+      query,
+      null,
+      { 'database': xdmp.database('Documents') }
+    );
+
+  const sec = require('/MarkLogic/security');
+  sec.addQueryRolesets(rolesetDefinitions);
+  
+} else {
+  'Please select the Security database from the Content Source menu and run this script again.';
+}</query><query name="Check Protected Paths" focus="false" listorder="4" taborder="4" active="true" database="2077208975638282412" server="12523142205650827470" database-name="Security" server-name="Admin" mode="javascript">// see what protected paths (if any) exist in the Security database
+
+'use strict';
+
+if (xdmp.databaseName(xdmp.database()) === 'Security') {
+
+  fn.collection('http://marklogic.com/xdmp/protected-paths');
+  
+} else {
+  'Please select the Security database and run this script again.'; 
+}</query><query name="Create Protected Path" focus="false" listorder="5" taborder="5" active="true" database="2077208975638282412" server="12523142205650827470" database-name="Security" server-name="Admin" mode="javascript">// Create protected path for the source/name property in our memo doc
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()) === 'Security') {
+
+  const sec = require('/MarkLogic/security');
+  const path = '/source/name';
+  const namespaces = null;
+  const permissions = [xdmp.permission('top-secret-read', 'read', 'element')];
+  sec.protectPath(path, namespaces, permissions);
+
+} else {
+  'Please select the Security database and run this script again.'; 
+}
+
+</query><query name="Test - Read" focus="false" listorder="6" taborder="6" active="true" database="14253814390685068046" server="1995432663919597630" database-name="Documents" server-name="App-Services" mode="javascript">// read the memo doc to see what the impact of the path
+
+'use strict';
+
+const query = "fn.doc('/secret/99999.json');"
+
+if (xdmp.databaseName(xdmp.database()) === 'Documents') {
+  
+  xdmp.eval(
+    query,
+    null,
+    { userId: xdmp.user('m')}
+  );
+
+} else {
+  'Please select the Documents database and run this script again.';
+}</query><query name="Test - Search" focus="false" listorder="7" taborder="7" active="true" database="14253814390685068046" server="1995432663919597630" database-name="Documents" server-name="App-Services" mode="javascript">// run a search that will match the memo doc.  Note the results aren't as expected.  We need rolesets.
+
+'use strict';
+
+const query = "cts.search(cts.wordQuery('silva'));"
+
+if (xdmp.databaseName(xdmp.database()) === 'Documents') {
+  
+  xdmp.eval(
+    query,
+    null,
+    { userId: xdmp.user('bond')}
+  );
+
+} else {
+  'Please select the Documents database and run this script again.';
+}</query><query name="Exercise" focus="false" listorder="12" taborder="12" active="true" database="2077208975638282412" server="12523142205650827470" database-name="Security" server-name="Admin" mode="javascript">/*
+  Implement element-level security to ensure that only users with the 
+  top-secret-read role can read the contents of the 'location' property
+*/
+
+'use strict';
+
+</query><query name="Answer" focus="false" listorder="13" taborder="13" active="true" database="2077208975638282412" server="12523142205650827470" database-name="Security" server-name="Admin" mode="javascript">// Create protected path for the location property
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()) === 'Security') {
+
+  const sec = require('/MarkLogic/security');
+  const path = '/source/location';
+  const namespaces = null;
+  const permissions = [xdmp.permission('top-secret-read', 'read', 'element')];
+  sec.protectPath(path, namespaces, permissions);
+
+} else {
+  'Please select the Security database and run this script again.'; 
+}
+
+</query><query name="Necessary Rolesets 1" focus="false" listorder="8" taborder="8" active="true" database="14253814390685068046" server="1995432663919597630" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+
+// use this function to see what rolesets are needed based on the defined protected paths for a doc that is in your database
+    
+xdmp.databaseNodeQueryRolesets(fn.doc('/secret/99999.json'), ['unconfigured']);
+</query><query name="Role Name" focus="false" listorder="9" taborder="9" active="true" database="2077208975638282412" server="12523142205650827470" database-name="Security" server-name="Admin" mode="javascript">'use strict';
+
+const query = 
+  `const sec = require('/MarkLogic/security');
+  sec.getRoleNames('17808507877939425124');`;
+
+const roleName = 
+  xdmp.eval(
+    query,
+    null,
+    { 'database': xdmp.securityDatabase() }
+  );  
+
+roleName;</query><query name="Necessary Rolesets 2" focus="false" listorder="10" taborder="10" active="true" database="2077208975638282412" server="12523142205650827470" database-name="Security" server-name="Admin" mode="javascript">'use strict';
+
+// use this function to see what rolesets are needed based on the defined protected paths for a doc that you create in memory
+
+xdmp.nodeQueryRolesets('/test.json', {source: {fname:'joe'}}, null, ['unconfigured']);</query></workspace></export>

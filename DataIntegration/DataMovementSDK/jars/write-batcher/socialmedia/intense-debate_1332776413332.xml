@@ -1,0 +1,33 @@
+<marklogic><id>tag:gnip.disqus.com:2012:comment/mkna9z/post/2012-03-26T03:25:54</id><type>P</type><type>P</type><inReplyTo><id>tag:gnip.disqus.com:2012:comment/mi3ywh</id><author><id>tag:gnip.disqus.com:2012:account/ewmvj</id></author><objectType>comment</objectType></inReplyTo><body>
+
+Hello Nic. 
+
+
+1.Â Â Â Â Â Â 
+The natural cooling of the water can be modelled
+using Newtonâ€™s law. I took a different approach by making use of actual
+measurements performed by Bosman, Grobler and Dalgleish at the North West
+University. Through simple regression analysis they derived straight line equations
+of losses versus water-to-ambient temperature difference. Their equations are
+useful because data was gathered from many systems at different temperatures,
+both with and without insulation. I could then set up a time series where I
+assumed straight line cooling over each one minute interval. One minute
+intervals are short enough to still capture the exponential nature of cooling
+without introducing much error.
+
+
+2.Â Â Â Â Â Â 
+I made use of the specific Heat of water and the
+power rating of the geyser throughout my calculations. These are not shown in
+order to keep the complexity of the presentation within everyoneâ€™s Reach. 
+
+
+All Kwikot geysers have power ratings matched
+to the cylinder capacity, so that, as I have mentioned, water temperature will
+rise by 17ÂºC per hour.
+This is a rule of thumb for those that need to know how long before their water
+is warm. This number was never used in any of the calculations, instead it was
+derived from the calculations.
+
+
+</body><verb>post</verb><target><id>tag:gnip.disqus.com:2012:thread/6mqtsp</id><website><id>tag:gnip.disqus.com:2012:forum/zzkq</id></website><link>http://www.moneyweb.co.za/mw/view/mw/en/page292681?oid=564803&amp;sn=2009+Detail&amp;pid=287226</link><postedTime>2012-03-20T03:45:19+00:00</postedTime><objectType>article</objectType></target><postedTime>2012-03-26T07:25:54+00:00</postedTime><object><id>tag:gnip.disqus.com:2012:comment/mkna9z</id><link>http://www.moneyweb.co.za/mw/view/mw/en/page292681?oid=564803&amp;sn=2009+Detail&amp;pid=287226#comment-476266694</link><objectType>comment</objectType></object><actor><id>tag:gnip.disqus.com:2012:account/-1</id><objectType>person</objectType></actor><disqusTypePrev>unapproved</disqusTypePrev><disqusType>approved</disqusType><platform>disqus</platform><posted_date>2012-03-20</posted_date><followers>0</followers><statuses>0</statuses><region>N.A.</region></marklogic>

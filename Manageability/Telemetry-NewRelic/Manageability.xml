@@ -1,0 +1,10 @@
+<export><workspace name="Manageability"><query name="Telemetry Settings" focus="true" listorder="1" taborder="1" active="true" database="14449112333231871224" server="17838803978523220697" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+
+var admin = require("/MarkLogic/admin");
+var configuration = admin.getConfiguration();
+var groupId = admin.groupGetId(configuration, "Default");
+
+//admin.groupGetTelemetryLogLevel(configuration, groupId);
+//admin.groupGetTelemetryMetering(configuration, groupId);
+//admin.groupGetTelemetryConfig(configuration, groupId);
+</query></workspace></export>

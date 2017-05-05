@@ -1,0 +1,87 @@
+<export><workspace name="Using SQL"><query name="Simple SQL" focus="true" listorder="1" taborder="1" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="sql">-- Find player names, jersey numbers and
+-- birth date, calling a MarkLogic internal
+-- function to format the date.
+
+SELECT name,jerseyNumber,fn_format_date(dateOfBirth,'[MNn] [D01], [Y]') FROM players
+LIMIT 100;
+</query><query name="Add Team Template" focus="false" listorder="2" taborder="2" active="true" database="2414818196662823388" server="11385285419119664508" database-name="Documents" server-name="5432-tde-odbc" mode="javascript">/*
+Define another template against the 'teams' data
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "documents") {
+  'Please set Content Source to "Documents" before running this code.';
+} else {
+  const myTemplate = xdmp.toJSON({
+    template: {
+      context: '/team',
+      enabled: true,
+      rows: [
+        {
+          schemaName: 'football',
+          viewName: 'teams',
+          columns: [
+            {
+              name: 'name',
+              scalarType: 'string',
+              val: 'name'
+            },
+            {
+              name: 'id',
+              scalarType: 'int',
+              val: 'id'
+            },
+            {
+              name: 'value',
+              scalarType: 'int',
+              val: 'value',
+              nullable: true,
+            }
+          ]
+        }
+      ]
+    }
+  }).root;
+  //returns an object "{ valid: true }"
+  const valid = tde.validate([myTemplate]).valid;
+  if (valid) {
+    const tde = require('/MarkLogic/tde')
+    tde.templateInsert('/templates/team-template', myTemplate, []);
+    'Template loaded';
+  } else {
+    'Invalid template =&gt; ' + tde.validate([myTemplate]).message;
+  }
+}
+</query><query name="SQL Join" focus="false" listorder="3" taborder="3" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="sql">/* Find the count of players by team,
+   group the results by team name and
+   sort by the count of player names
+   in descending order.
+   Best practice to include a limit so
+   massive database results are limited
+   as a default.
+*/
+
+SELECT COUNT(players.name), teams.name
+FROM players
+INNER JOIN teams
+ON players.teamId = teams.id
+GROUP BY teams.name
+ORDER BY COUNT(players.name) DESC
+LIMIT 100;
+</query><query name="SQL Join 2" focus="false" listorder="4" taborder="4" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="sql">/* Find team names, the sum of players'
+   market values and the value of each team.
+   Group results by team name and constrain
+   the results to only those teams where
+   the sum of the player market values 
+   is less than the team's value.
+*/
+
+SELECT teams.name, SUM(players.marketValue), teams.value
+FROM players
+INNER JOIN teams
+ON players.teamId = teams.id
+GROUP BY teams.name
+HAVING SUM(players.marketValue) &lt; teams.value
+LIMIT 100;
+</query></workspace></export>

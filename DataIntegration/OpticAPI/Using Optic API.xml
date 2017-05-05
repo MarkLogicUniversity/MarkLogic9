@@ -1,0 +1,79 @@
+<export><workspace name="Using Optic API"><query name="Query 1" focus="false" listorder="1" taborder="1" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+/*
+Return the players' names and nationalities.
+Limit the returned results to 100 until
+   testing gives us a better idea of the
+   scope of the results.
+*/
+
+const op = require('/MarkLogic/optic');
+const playersView = op.fromView('Football', 'Players');
+
+playersView
+  .select(['name', 'nationality'])
+  .limit(100)
+  .result();
+</query><query name="Query 2" focus="false" listorder="2" taborder="2" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+/*
+Return the player names and jersey numbers
+   where the jersey number is equal to 99.
+Again, limit the results for intial testing.
+*/
+
+const op = require('/MarkLogic/optic');
+const playersView = op.fromView('Football', 'Players');
+
+playersView
+  .select(['name', 'jerseyNumber'])
+  .where(op.eq(op.col('jerseyNumber'), 99))
+  .limit(100)
+  .result();
+</query><query name="Query 3" focus="false" listorder="3" taborder="3" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+/*
+Return player name, jerseyNumber, nationality
+  where jerseyNumber = 7 and nationality = 'Portuguese'.
+Sort the results by player name;
+*/
+
+const op = require('/MarkLogic/optic');
+const playersView = op.fromView('Football', 'Players');
+
+playersView
+  .select(['name', 'jerseyNumber', 'nationality'])
+  .where(op.eq(op.col('jerseyNumber'), 7))
+  .where(op.eq(op.col('nationality'), 'Portugal'))
+  .limit(100)
+  .result();
+</query><query name="Query 4" focus="false" listorder="4" taborder="4" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+/*
+Find player and team names along with player
+   nationalities.
+*/
+
+const op = require('/MarkLogic/optic');
+const playerView = op.fromView('Football', 'Players');
+const teamView = op.fromView('Football', 'Teams');
+
+playerView
+  .joinInner(teamView, op.on(op.col('teamId'),  teamView.col('id')))
+  .select([playerView.col('name'), 'nationality', teamView.col('name')])
+  .limit(100)
+  .result();
+</query><query name="Query 5" focus="true" listorder="6" taborder="5" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+/*
+Aggregate the number of players and return
+   the count in descending order, grouped
+   by team name.
+*/
+
+const op = require('/MarkLogic/optic');
+const playerView = op.fromView('Football', 'Players');
+const teamView = op.fromView('Football', 'Teams');
+
+playerView
+  .joinInner(teamView, op.on(playerView.col('teamId'),  teamView.col('id')))
+  .groupBy(teamView.col('name'), op.count(op.as('Total Players', playerView.col('name'))))
+  .orderBy(op.desc('Total Players'))
+  .limit(100)
+  .result();
+</query></workspace></export>

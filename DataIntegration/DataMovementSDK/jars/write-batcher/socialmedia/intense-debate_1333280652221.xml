@@ -1,0 +1,23 @@
+<marklogic><id>tag:gnip.disqus.com:2012:comment/mwfeh2/update/2012-03-31T00:54:12/708555305bed3609814e2eb49b68a3b202f1669a88f1874bbcabb6c684eed4f3</id><type>P</type><type>P</type><inReplyTo><id>tag:gnip.disqus.com:2012:comment/mwvso4</id><author><id>tag:gnip.disqus.com:2012:account/-1</id></author><objectType>comment</objectType></inReplyTo><body>Saj,
+
+ to hear you found the calculator useful.
+
+Since this question keeps coming up, I'm going to try to answer it more fully.
+
+Let me preface my comments by saying you should consult with your local electrical authority / inspector to see what their local electrical bylaws are with respect to your specific electrical installation.Â  Okay, so, having said that, I will tell you what the CEC says:
+
+The "not to exceed 80%" of an overcurrent device's marked rating comes from Rule 8-104(5)(a) of the CEC, Part 1, but the rule only applies to branch circuits, not to service feeds.
+
+Why? Because service feed overcurrent devices are not protecting, according to the CEC Part 1, a *continuous* load.
+
+
+
+Specifically, read Rule 8-200(3) which says, "The total load calculated in accordance with either Subrule (1) or (2) shall not be considered to be a  continuous load for application to Rule 8-104."
+
+In other words, an electrical panel's service feed overcurrent device---that 100A "main" breaker in a 100A rated panel, or that 200A main breaker in a 200A rated panel---is not considered to be protecting a continuous load ... unlike, say, that 15A breaker feeding lights and plugs in your basement. 
+
+So, if you did all your calculations correctly, and you came up with a total demand amps of 99.9A, a 100A-rated panel is compliant with the rules in the 2009 CEC, Part 1 as I understand them. 
+
+But! as I say to everyone willing to listen: if you are not a qualified, licensed electrician, make every effort to talk to your local electrical inspector before you start installation to see if there are any local bylaws pertaining to legal suites that amends or overrules the CEC, Part 1.Â  One quick phone call can save you tons of money and Headaches down the road. 
+
+And of course, don't ever take my word for it ... , Always get a licensed master electrician or an inspector to give you the definitive yes/no.</body><verb>update</verb><target><id>tag:gnip.disqus.com:2012:thread/cl92fh</id><website><id>tag:gnip.disqus.com:2012:forum/ljru</id></website><link>http://www.douglashelmer.com/calculators/electrical/residential-service/index.htm</link><postedTime>2011-01-04T19:46:35+00:00</postedTime><objectType>article</objectType></target><postedTime>2012-03-31T04:54:12+00:00</postedTime><object><id>tag:gnip.disqus.com:2012:comment/mwfeh2</id><link>http://www.douglashelmer.com/calculators/electrical/residential-service/index.htm#comment-481544820</link><objectType>comment</objectType></object><actor><id>tag:gnip.disqus.com:2012:account/gn8m</id><objectType>person</objectType></actor><disqusTypePrev>approved</disqusTypePrev><disqusType>approved</disqusType><platform>disqus</platform><posted_date>2011-01-04</posted_date><followers>0</followers><statuses>0</statuses><region>N.A.</region></marklogic>

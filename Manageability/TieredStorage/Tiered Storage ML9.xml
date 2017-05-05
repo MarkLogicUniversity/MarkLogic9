@@ -1,0 +1,292 @@
+<export><workspace name="Tiered Storage ML9"><query name="1-Setup a database" focus="true" listorder="1" taborder="1" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+
+const admin = require('/MarkLogic/admin'); 
+let dbConfig = admin.getConfiguration(); 
+
+dbConfig = admin.databaseCreate(
+  dbConfig, 
+  'ts-db', 
+  xdmp.database('Security'),
+  xdmp.database('Schemas')
+); 
+
+admin.saveConfiguration(dbConfig);
+
+'Database successfully created.';</query><query name="2-Set locking to strict" focus="false" listorder="2" taborder="2" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+
+const admin = require('/MarkLogic/admin');
+let dbconfig = admin.getConfiguration();
+
+dbconfig = admin.databaseSetLocking(
+  dbconfig, 
+  xdmp.database('ts-db'),
+  'strict'
+);
+
+admin.saveConfiguration(dbconfig);
+
+'Locking set to strict successfully';
+
+</query><query name="3-Configure assignment policy to query" focus="false" listorder="3" taborder="3" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+
+const admin = require('/MarkLogic/admin');
+let dbconfig = admin.getConfiguration();
+const dbid = admin.databaseGetId(dbconfig, 'ts-db');
+const policy = admin.queryAssignmentPolicy(1);
+
+dbconfig = admin.databaseSetAssignmentPolicy(
+  dbconfig, 
+  dbid, 
+  policy
+);
+
+admin.saveConfiguration(dbconfig);
+
+'Assignment policy set to query type.';
+
+</query><query name="4-Now create the partitions" focus="false" listorder="4" taborder="4" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="javascript">'use strict'
+declareUpdate({ explicitCommit: true });
+const ts = require('/MarkLogic/tieredstorage');
+
+ts.queryPartitionCreate(
+  xdmp.database('ts-db'),
+  'Operational',
+  100,
+  1,
+  xdmp.host()
+);
+
+ts.queryPartitionCreate(
+  xdmp.database('ts-db'),
+  'Reporting',
+  200,
+  1,
+  xdmp.host(),
+  'D:/MarkLogic/Data/Reporting'  //directory must exist
+); 
+
+ts.queryPartitionCreate(
+  xdmp.database('ts-db'),
+  'Archival',
+  300,
+  1,
+  xdmp.host(),
+  'D:/MarkLogic/Data/Archival'  //directory must exist
+); 
+
+ts.queryPartitionCreate(
+  xdmp.database('ts-db'),
+  'Default',
+  400,
+  1,
+  xdmp.host()
+); 
+
+xdmp.commit();
+
+'Tiers created successfully.'</query><query name="5-Create a range index to be used in the queries" focus="false" listorder="5" taborder="5" active="true" database="9553320957806614587" server="15199598374437037311" database-name="Documents" server-name="App-Services" mode="javascript">/* Document sample
+{
+    "id" : "/doc1.json",
+    "create-time" : "2017-01-01T00:00:00",
+    "orderAction": "BUY",
+    "priceType": "LIMIT",
+    "orderTerm": "GOOD_FOR_DAY",
+    "quantity": "4",
+    "accountId": "83550325",
+    "clientOrderId": "asdfdsa12312",
+    "limitPrice": "10",
+    "stopPrice": "10"
+  }
+*/
+'use strict';
+declareUpdate();
+
+const admin = require('/MarkLogic/admin');
+let dbconfig = admin.getConfiguration();
+const dbid = xdmp.database('ts-db');
+const rangespec = admin.databaseRangeElementIndex('dateTime','','create-time','', false);
+
+dbconfig = admin.databaseAddRangeElementIndex(
+  dbconfig, 
+  dbid,
+  rangespec
+);
+
+admin.saveConfiguration(dbconfig);
+
+'Range index created successfully.';</query><query name="6-Now, set the query policies" focus="false" listorder="6" taborder="6" active="true" database="13915038857124695736" server="15199598374437037311" database-name="Schemas" server-name="App-Services" mode="javascript">/*
+Assign Documents to tiers based on age using the xs.yearMonthDuration
+Tiered storage always assume that it is a period in the PAST from today. 
+In queries, documents that are up to up to 1 month old
+
+cts:element-range-query(xs:QName("somedate"), "&gt;=", xs:yearMonthDuration("P1M"))
+    is equivalent to
+cts:element-range-query(xs:QName("somedate"), "&gt;=", fn:current-dateTime() - xs:yearMonthDuration("P1M"))
+
+Overlapping is handled by partition number order. The document stops at the first partition that it matches.
+*/
+
+'use strict';
+declareUpdate();
+
+const ts = require('/MarkLogic/tieredstorage');
+
+
+//Documents that are up to one month old will match tier 100
+ts.partitionSetQuery(
+  xdmp.schemaDatabase(xdmp.database('ts-db')), 
+  100, 
+  cts.jsonPropertyRangeQuery(
+    ('create-time'),
+    '&gt;=',
+    xs.yearMonthDuration('P1M')
+  )
+);
+
+//Documents that are up to 2 months old will match tier 200
+ts.partitionSetQuery(
+  xdmp.schemaDatabase(xdmp.database('ts-db')),
+  200,
+  cts.jsonPropertyRangeQuery(
+    ('create-time'),
+    '&gt;=' ,
+    xs.yearMonthDuration('P2M')
+  )
+);
+
+
+//Documents that are more than 2 months old will mach the tier 300
+ts.partitionSetQuery(
+  xdmp.schemaDatabase(xdmp.database('ts-db')),
+  300,
+  cts.jsonPropertyRangeQuery(
+    ('create-time'),
+    '&lt;' ,
+    xs.yearMonthDuration('P2M')
+  )
+);
+
+`Queries set successfully. 
+Explore Schemas database to check queries were saved for each tier. 
+Forests that are not part of a query partition will serve as a default partition.`</query><query name="7-Finally, let’s test insert documents" focus="false" listorder="7" taborder="7" active="true" database="17778845051660496472" server="15199598374437037311" database-name="ts-db" server-name="App-Services" mode="javascript">'use strict';
+declareUpdate();
+
+const documents = [
+  {
+    "id" : "/doc1.json",
+    "create-time" : "2017-02-01T00:00:00",
+    "orderAction": "BUY",
+    "priceType": "LIMIT",
+    "orderTerm": "GOOD_FOR_DAY",
+    "quantity": "4",
+    "accountId": "83550325",
+    "clientOrderId": "asdfdsa12312",
+    "limitPrice": "10",
+    "stopPrice": "10"
+  }
+,
+  {
+    "id": "/doc2.json",
+    "create-time" : "2017-01-01T00:00:00",
+    "orderAction": "BUY",
+    "priceType": "LIMIT",
+    "orderTerm": "GOOD_FOR_DAY",
+    "quantity": "15",
+    "accountId": "78536289",
+    "clientOrderId": "gfdfdsa87778",
+    "limitPrice": "5",
+    "stopPrice": "5"
+  }
+,
+ {
+    "id": "/doc3.json",
+    "create-time" : "2016-11-01T00:00:00",
+    "orderAction": "BUY",
+    "priceType": "LIMIT",
+    "orderTerm": "GOOD_FOR_DAY",
+    "quantity": "100",
+    "accountId": "45309840",
+    "clientOrderId": "uutrusa67678",
+    "limitPrice": "12",
+    "stopPrice": "12"
+  }
+];
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'ts-db') {
+  'Please set Content Source to "ts-db" before running this code.';
+} else {  
+documents.map(document =&gt; xdmp.documentInsert(document.id, document));
+  
+`Documents inserted.
+Check that the forest document count match the following numbers:
+Operational-0001 = 1
+Reporting-0001= 1
+Archival-0001 = 1
+Default-0001 = 0 `
+};
+
+
+
+
+</query><query name="8-Let's update a document" focus="false" listorder="8" taborder="8" active="true" database="17778845051660496472" server="15199598374437037311" database-name="ts-db" server-name="App-Services" mode="javascript">'use strict';
+declareUpdate();
+
+//When a document create-time property is updated, that document gets immediately reinserted in the correct partition.
+//To check to see if document will also naturally automatically move to the correct tier as they age, we will have to wait long enough
+//Instead you may want to change the query policies time duration to minutes and observe the documents move quicker
+
+
+const document = cts.doc('/doc1.json');
+const documentObject = document.toObject();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'ts-db') {
+  'Please set Content Source to "ts-db" before running this code.';
+} else {
+documentObject['create-time'] = '2016-01-01T00:00:00';
+xdmp.nodeReplace(document, documentObject);
+`Document updated. 
+Check that the forest document count matches the following numbers:
+Operational-0001 = 0
+Reporting-0001= 1 
+Archival-0001 = 2
+Default-0001 = 0 `
+};
+
+</query><query name="9-Setup partition exclusion" focus="false" listorder="10" taborder="9" active="true" database="17778845051660496472" server="15199598374437037311" database-name="ts-db" server-name="App-Services" mode="javascript">'use strict';
+declareUpdate();
+
+const ts = require('/MarkLogic/tieredstorage');
+
+ts.partitionSetExclusionEnabled(
+  xdmp.schemaDatabase(xdmp.database('ts-db')),
+  100, 
+  false
+);
+
+ts.partitionSetExclusionEnabled(
+  xdmp.schemaDatabase(xdmp.database('ts-db')),
+  200, 
+  true
+);
+
+ts.partitionSetExclusionEnabled(
+  xdmp.schemaDatabase(xdmp.database('ts-db')),
+  300,
+  true
+);
+
+'Query exclusion set on Reporting (200) and Archival (300) partitions.'</query><query name="10- Document count per forest" focus="false" listorder="10" taborder="10" active="true" database="17778845051660496472" server="15199598374437037311" database-name="ts-db" server-name="App-Services" mode="javascript">'use strict';
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'ts-db') {
+  'Please set Content Source to "ts-db" before running this code.';
+} else {
+const forests = {};
+for (let forestID of xdmp.databaseForests(xdmp.database())) {
+  forests[(xdmp.forestName(forestID))] = fn.head(xdmp.forestCounts(forestID)).documentCount;
+}
+forests;
+};
+
+
+
+</query></workspace></export>

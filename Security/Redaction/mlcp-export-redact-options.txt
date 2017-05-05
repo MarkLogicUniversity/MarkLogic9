@@ -1,0 +1,15 @@
+export
+-mode
+local
+-host
+localhost
+-port
+8000
+-username
+admin
+-password
+admin
+-output_file_path 
+c:\\redacted-data 
+-redaction
+"agent-redaction-rules,memo-redaction-rules"

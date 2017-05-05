@@ -1,0 +1,98 @@
+<export><workspace name="Using TDE"><query name="Define, Validate, Insert Template" focus="true" listorder="1" taborder="1" active="true" database="2414818196662823388" server="11385285419119664508" database-name="Documents" server-name="5432-tde-odbc" mode="javascript">/*
+This example builds a template, validates the template and inserts 
+it into the schema database configured for the content database.
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "documents") {
+  'Please set Content Source to "Documents" before running this code.';
+} else {
+  const myTemplate = xdmp.toJSON({
+    template: {
+      context: '/player',
+      enabled: true,
+      rows: [
+        {
+          schemaName: 'football',
+          viewName: 'players',
+          columns: [
+            {
+              name: 'name',
+              scalarType: 'string',
+              val: 'name'
+            },
+            {
+              name: 'position',
+              scalarType: 'string',
+              val: 'position'
+            },
+            {
+              name: 'jerseyNumber',
+              scalarType: 'int',
+              val: 'jerseyNumber'
+            },
+            {
+              name: 'dateOfBirth',
+              scalarType: 'date',
+              val: 'dateOfBirth'
+            },
+            {
+              name: 'nationality',
+              scalarType: 'string',
+              val: 'nationality'
+            },
+            {
+              name: 'marketValue',
+              scalarType: 'int',
+              val: 'marketValue',
+              nullable: true
+            },
+            {
+              name: 'teamId',
+              scalarType: 'int',
+              val: 'teamId'
+            },
+            {
+              name: 'contractUntil',
+              scalarType: 'date',
+              val: 'contractUntil',
+              nullable: true,
+              invalidValues: 'ignore'
+            }
+          ]
+        }
+      ]
+    }
+  }).root;
+  const tde = require('/MarkLogic/tde')
+  // tde.validate returns an object with a
+  //  property of 'valid'.
+  var results = tde.validate([myTemplate]);
+  if (results.valid === true) {
+    results = tde.nodeDataExtract([fn.doc(['/player/cristianoronaldo.json', '/player/loicdamour.json'])], [myTemplate]);
+    tde.templateInsert('/templates/player-template', myTemplate, []);    
+    // results show the successful results of 
+    //  the nodeDataExtract
+    results;
+  }
+}
+
+</query><query name="Simple SQL" focus="false" listorder="3" taborder="3" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="sql">-- Simple SQL statement
+-- Best practice, always apply a limit
+SELECT name,position,nationality FROM players
+LIMIT 100;
+
+</query><query name="Combination Query" focus="false" listorder="4" taborder="4" active="true" database="2414818196662823388" server="11385285419119664508" database-name="Documents" server-name="5432-tde-odbc" mode="javascript">/*
+You can also run combination queries against your data,
+this searches for player names and position but only if
+they are from Hungary
+*/
+
+xdmp.sql(
+  `SELECT name, position FROM players LIMIT 100;`
+ ,
+ [],
+ [],
+ cts.jsonPropertyWordQuery('nationality', 'Hungary')
+);</query></workspace></export>

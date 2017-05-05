@@ -1,0 +1,132 @@
+<export><workspace name="TDE-Optic-Setup"><query name="Setup" focus="true" listorder="1" taborder="1" active="true" database="2414818196662823388" server="11385285419119664508" database-name="Documents" server-name="5432-tde-odbc" mode="javascript">'use strict'
+declareUpdate();
+/*
+  Create an ODBC Application Server to be used 
+  with the 'Using TDE' MarkLogic University
+  On Demand tutorial then load the sample data.
+  
+  NOTE: Make sure to set the value of the 
+  variable 'loadDirectory' to the path where
+  you downloaded the sample data.
+*/
+
+// Set "loadDirectory to the directory where you downloaded 
+//  these examples from the github repository.
+
+//  Example: "/Temp/MarkLogic9/DataIntegration/tde-sql-optic-setup"
+const loadDirectory = '/MarkLogic9/DataIntegration/tde-sql-optic-setup';
+if ((xdmp.databaseName(xdmp.database()).toLowerCase() !== 'documents') ||
+    (loadDirectory.length === 0)) {
+  'Please set Content Source to "Documents" before running this code and check that the "loadDirectory" variable is set to the path where you downloaded the sample data.';
+} else {
+  const config = 
+    {
+     'server-name':'5432-tde-odbc',
+     'root':'/',
+     'port':5432,
+     'content-database':'Documents'
+  };
+
+  const options = {
+    authentication: {
+      'method': 'digest',
+      'username': 'admin',
+      'password': 'admin'
+    },
+    data: xdmp.quote(config), //xdmp.quote() formats the config object as a string so the REST endpoint understands it
+    headers : {
+      'content-type' : 'application/json'
+    }
+  };
+
+  // create the ODBC Application Server to use with the SQL TDE examples
+  xdmp.httpPost('http://localhost:8002/manage/v2/servers?group-id=Default&amp;server-type=odbc', options);
+  
+  // load the TDE sameple data
+  const playerDirectory = xdmp.filesystemDirectory(loadDirectory + "/tde/player");
+  const teamDirectory = xdmp.filesystemDirectory(loadDirectory + "/tde/team");
+  for (var i=0; i &lt; playerDirectory.length; i++) {
+    if (playerDirectory[i].type != "directory") {
+      xdmp.documentLoad(playerDirectory[i].pathname, {"uri": "/player/" + playerDirectory[i].filename, "collections": ["tde"]});
+    }
+  }
+  for (i=0; i &lt; teamDirectory.length; i++) {
+    if (teamDirectory[i].type != "directory") {
+      xdmp.documentLoad(teamDirectory[i].pathname, {"uri": "/team/" + teamDirectory[i].filename, "collections": ["tde"]});
+    }
+  }
+  
+  'Sample Content loaded to Documents database and ODBC Application Server has been created.'
+}
+</query><query name="Teardown-Step 1" focus="false" listorder="2" taborder="2" active="true" database="2414818196662823388" server="75682055858675322" database-name="Documents" server-name="App-Services" mode="javascript">'use strict'
+declareUpdate();
+/*
+  Delete sample data and ODBC Application Server 
+  used with the 'Using TDE' MarkLogic University
+  On Demand tutorial. Also, set the TDE Template
+  to disabled. After the database has re-indexed,
+  the template can be deleted, if desired.
+  
+  Note: Deleting the ODBC App Server will cause
+  MarkLogic to restart. Be sure to refresh the
+  Query Console page in your browser before
+  continuing.
+*/
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "documents") {
+  'Please set Content Source to "Documents" before running this code.';
+} else {
+  var options = {
+    authentication: {
+      'method': 'digest',
+      'username': 'admin',
+      'password': 'admin'
+    },
+    headers : {
+      'content-type' : 'application/json'
+    }
+  };
+
+  xdmp.httpDelete('http://localhost:8002/manage/v2/servers/5432-tde-odbc?group-id=Default&amp;format=json', options);
+  xdmp.collectionDelete('tde');
+  
+  // Update the TDE template and set the
+  //  'enabled' property to false to disable
+  //  this TDE template. This will cause a re-index
+  //  then the template can be deleted, if desired.
+  const templateEnabled =
+    {"patch": [
+      {"replace": {
+        "select": "/template/enabled",
+        "content": false
+      }}
+    ]};
+  
+  options = {
+    authentication: {
+      'method': 'digest',
+      'username': 'admin',
+      'password': 'admin'
+    },
+    data : xdmp.quote(templateEnabled),
+    headers : {
+      'content-type' : 'application/json',
+      'X-HTTP-Method-Override' : 'PATCH'
+    }
+  };
+  xdmp.httpPost('http://localhost:8000/LATEST/documents?uri=/templates/player-template&amp;database=Schemas&amp;format=json', options);
+  xdmp.httpPost('http://localhost:8000/LATEST/documents?uri=/templates/team-template&amp;database=Schemas&amp;format=json', options);
+  'Sample data deleted, ODBC Application Server removed and TDE template disabled. After re-indexing is complete, delete the template, if desired, with the Delete Template tab.'
+}
+
+</query><query name="Teardown-Step 2" focus="false" listorder="3" taborder="3" active="true" database="14951438589857013922" server="75682055858675322" database-name="" server-name="" mode="javascript">declareUpdate();
+
+// Delete the template from the Schemas database
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "schemas") {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+  if (fn.docAvailable('/templates/player-template')) xdmp.documentDelete('/templates/player-template');
+  if (fn.docAvailable('/templates/team-template')) xdmp.documentDelete('/templates/team-template');
+  'TDE Templates deleted.'
+}
+</query></workspace></export>
