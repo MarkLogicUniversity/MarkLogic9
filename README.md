@@ -2,16 +2,11 @@
 Here you'll find the supporting code and examples for the **What's New in MarkLogic 9** self-paced course. Some basic familiarity with MarkLogic Server and Query Console is assumed.
 
 ## Getting Started
-To follow along with the hands-on examples:
-<ol>
-<li>Download MarkLogic:
-  <ul>
-    <li>http://developer.marklogic.com/
-  </ul>
-<li>Install, start, and initialize MarkLogic on your local machine:
-  <ul>
-    <li>http://docs.marklogic.com/guide/installation
-  </ul>
-<li>The various units may have Query Console workspaces and/or other hands-on examples. Refer to each unit's <b>README</b> file.
-</ol>
+To follow along with the hands-on examples:  
+
+1. Download MarkLogic:
+  * http://developer.marklogic.com/
+2. Install, start, and initialize MarkLogic on your local machine:
+  * http://docs.marklogic.com/guide/installation
+3. The various units may have Query Console workspaces and/or other hands-on examples. Refer to each unit's **README** file.
 
