@@ -1,7 +1,7 @@
 # What's New In MarkLogic 9
 Here you'll find the supporting code and examples for the **What's New in MarkLogic 9** self-paced course. Some basic familiarity with MarkLogic Server and Query Console is assumed.
 
-##Getting Started
+## Getting Started
 To follow along with the hands-on examples:
 <ol>
 <li>Download MarkLogic:
