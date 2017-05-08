@@ -24,7 +24,7 @@ If you have already done the **TDE-Optic-Setup** steps below, skip to the **Impo
 	2. Log in with your MarkLogic admin account.
 	3. On top of the Query window, on the right-hand side of the web page, click the Workspace dropdown.
 	4. Select **Import Workspace...**
-	5. Browse to the downloaded `/MarkLogic9/DataIntegration` folder then the `tde-sql-optic-setup` folder.
+	5. Browse to the downloaded `/MarkLogic9/DataIntegration` folder then the `tde-sql-optic` folder.
 	6. Select the `TDE-Optic-Setup.xml` file then click the **Open** button.
 	7. Click the **Import** button.
 * Run the script in the first tab. The other two tabs are to clean up when you no longer want the examples in the **Documents** database.
