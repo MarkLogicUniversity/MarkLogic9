@@ -3,8 +3,7 @@
 ## Getting Started
 
 1. Download MarkLogic:
-	* http://developer.marklogic.com/
-  </ul>
+	* http://developer.marklogic.com
 2. Install, start, and initialize MarkLogic on your local machine:
 	* http://docs.marklogic.com/guide/installation
 
