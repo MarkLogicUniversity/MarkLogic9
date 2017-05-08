@@ -18,15 +18,10 @@ The **Using Template Driven Extraction**, **Using SQL** and **Introduction to th
 
 If you have already done the **TDE-Optic-Setup** steps below, skip to the **Import the "Using TDE" example workspace** below.
 
-* Import the **TDE-Optic-Setup** Query Console Workspace.
-	1. With MarkLogic started, in a browser go to the URL of `http://localhost:8000`
-	2. Log in with your MarkLogic admin account.
-	3. On top of the Query window, on the right-hand side of the web page, click the Workspace dropdown.
-	4. Select **Import Workspace...**
-	5. Browse to the downloaded `/MarkLogic9/DataIntegration` folder then the `tde-sql-optic` folder.
-	6. Select the `TDE-Optic-Setup.xml` file then click the **Open** button.
-	7. Click the **Import** button.
-* Run the script in the first tab. The other two tabs are to clean up when you no longer want the examples in the **Documents** database.
+Otherwise, please do the following.
+
+* Browse to the downloaded `/MarkLogic9/DataIntegration` folder then the `tde-sql-optic` folder.
+* Refer to the instructions in the **README.md** file in the `tde-sql-optic` folder.
 * Proceed to the next steps for importing the **Using TDE** example workspace.
 
 ### Import the "Using TDE" example workspace
