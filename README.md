@@ -12,6 +12,6 @@ To follow along with the hands-on examples:
   <ul>
     <li>http://docs.marklogic.com/guide/installation
   </ul>
-<li>The various units may have Query Console workspaces and/or other hands-on examples. Refer to each unit's **README** file.
+<li>The various units may have Query Console workspaces and/or other hands-on examples. Refer to each unit's <b>README</b> file.
 </ol>
 
